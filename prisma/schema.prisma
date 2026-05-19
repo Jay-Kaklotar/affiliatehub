@@ -1,0 +1,76 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Category {
+  id    Int       @id @default(autoincrement())
+  name  String
+  slug  String    @unique
+  icon  String
+  products Product[]
+}
+
+model Product {
+  id              Int      @id @default(autoincrement())
+  name            String   @default("")
+  slug            String   @unique
+  description     String   @db.Text
+  price           Int      @default(0)
+  categoryId      Int
+  category        Category @relation(fields: [categoryId], references: [id])
+  images          Json     // Storing array of image URLs
+  rating          Float    @default(4.5)
+  discount        Int      @default(0)
+  isTrending      Boolean  @default(false)
+  isDealOfTheWeek Boolean  @default(false)
+  source          String   @default("MANUAL") // 'API' or 'MANUAL'
+  features        Json     // Storing array of features
+  offers          Offer[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Offer {
+  id            Int     @id @default(autoincrement())
+  platform      String
+  price         Int
+  affiliateLink String  @db.Text
+  logo          String
+  label         String?
+  isAvailable   Boolean @default(true)
+  productId     Int
+  product       Product @relation(fields: [productId], references: [id])
+}
+
+model BlogPost {
+  id        Int      @id @default(autoincrement())
+  slug      String   @unique
+  title     String
+  excerpt   String   @db.Text
+  content   String   @db.LongText
+  image     String
+  author    String
+  date      String
+  category  String
+  isFeatured Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model Platform {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  logo        String?
+  defaultLink String?  @db.Text
+  isVisible   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+}
+
+
