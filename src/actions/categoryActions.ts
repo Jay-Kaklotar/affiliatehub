@@ -26,7 +26,7 @@ export async function createCategory(formData: FormData) {
       const filename = `${Date.now()}-${iconFile.name.replace(/\s+/g, '-')}`;
       const blob = await put(filename, iconFile, {
         access: 'public',
-        store: process.env.BLOB_STORE_ID
+        storeId: process.env.BLOB_STORE_ID
       });
       iconPath = blob.url;
     }
