@@ -3,7 +3,10 @@
 import prisma from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 
-import { put } from '@vercel/blob';
+import { put, del } from '@vercel/blob';
+
+// Helper: check if a URL is a Vercel Blob URL
+const isBlobUrl = (url: string) => url?.includes('blob.vercel-storage.com');
 
 const cleanSlug = (slug: string) => {
   return slug
@@ -51,6 +54,12 @@ export async function updateCategory(id: number, formData: FormData) {
     const data: any = { name, slug };
 
     if (iconFile && iconFile.size > 0) {
+      // Delete old icon from Blob storage if it exists
+      const oldCategory = await prisma.category.findUnique({ where: { id } });
+      if (oldCategory && isBlobUrl(oldCategory.icon)) {
+        await del(oldCategory.icon).catch(() => {});
+      }
+
       const filename = `${Date.now()}-${iconFile.name.replace(/\s+/g, '-')}`;
       const blob = await put(filename, iconFile, {
         access: 'public',
@@ -73,6 +82,9 @@ export async function updateCategory(id: number, formData: FormData) {
 
 export async function deleteCategory(id: number) {
   try {
+    // Fetch category to get icon URL before deleting
+    const category = await prisma.category.findUnique({ where: { id } });
+
     // Check if category has products
     const productsCount = await prisma.product.count({
       where: { categoryId: id }
@@ -104,6 +116,11 @@ export async function deleteCategory(id: number) {
     await prisma.category.delete({
       where: { id }
     });
+
+    // Delete icon from Blob storage after DB delete
+    if (category && isBlobUrl(category.icon)) {
+      await del(category.icon).catch(() => {});
+    }
     revalidatePath('/admin/categories');
     return { success: true };
   } catch (error) {
