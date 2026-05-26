@@ -128,4 +128,3 @@ export async function deleteCategory(id: number) {
     return { success: false, error: 'Failed to delete category.' };
   }
 }
-
