@@ -3,8 +3,7 @@
 import prisma from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 
-import { writeFile } from 'fs/promises';
-import { join } from 'path';
+import { put } from '@vercel/blob';
 
 const cleanSlug = (slug: string) => {
   return slug
@@ -24,12 +23,12 @@ export async function createCategory(formData: FormData) {
 
   try {
     if (iconFile && iconFile.size > 0) {
-      const bytes = await iconFile.arrayBuffer();
-      const buffer = Buffer.from(bytes);
       const filename = `${Date.now()}-${iconFile.name.replace(/\s+/g, '-')}`;
-      const path = join(process.cwd(), 'public/uploads', filename);
-      await writeFile(path, buffer);
-      iconPath = `/uploads/${filename}`;
+      const blob = await put(filename, iconFile, {
+        access: 'public',
+        store: process.env.BLOB_STORE_ID
+      });
+      iconPath = blob.url;
     }
 
     await prisma.category.create({
@@ -52,12 +51,12 @@ export async function updateCategory(id: number, formData: FormData) {
     const data: any = { name, slug };
 
     if (iconFile && iconFile.size > 0) {
-      const bytes = await iconFile.arrayBuffer();
-      const buffer = Buffer.from(bytes);
       const filename = `${Date.now()}-${iconFile.name.replace(/\s+/g, '-')}`;
-      const path = join(process.cwd(), 'public/uploads', filename);
-      await writeFile(path, buffer);
-      data.icon = `/uploads/${filename}`;
+      const blob = await put(filename, iconFile, {
+        access: 'public',
+        storeId: process.env.BLOB_STORE_ID
+      });
+      data.icon = blob.url;
     }
 
     await prisma.category.update({
